@@ -479,3 +479,10 @@ Status Code	Meaning
 ## Git Workflow
 
 TaskFlow was developed using a feature-branch workflow. Changes were developed on a feature branch and merged back into the main branch after completion.
+
+## Testing
+
+The algorithm checks can be run with:
+
+```bash
+python backend/algorithm_checker.py
