@@ -73,7 +73,8 @@ quickAddForm.addEventListener("submit", async function (event) {
 
     quickAddForm.reset();
 
-    loadTasks();
+    await loadTasks();
+    await loadStatistics();
   } catch (error) {
     console.error("Quick Add error:", error);
   }
@@ -185,6 +186,7 @@ taskForm.addEventListener("submit", async function (event) {
     );
 
     await loadTasks();
+    await loadProjects();
     await loadStatistics();
   } catch (error) {
     console.error("Error creating task:", error);
@@ -383,78 +385,301 @@ async function loadProjects() {
   console.log("Project GET token:", token);
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/projects", {
+    // --------------------------------
+    // 1. Get projects
+    // --------------------------------
+
+    const projectResponse = await fetch("http://127.0.0.1:8000/projects", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    const data = await response.json();
+    const projects = await projectResponse.json();
 
-    console.log("Projects response:", data);
+    console.log("Projects response:", projects);
 
-    if (!response.ok) {
-      console.error("Failed to load projects:", data);
+    if (!projectResponse.ok) {
+      console.error("Failed to load projects:", projects);
       return;
     }
 
-    // Clear old project data
+    // --------------------------------
+    // 2. Get all tasks
+    // --------------------------------
+
+    const taskResponse = await fetch("http://127.0.0.1:8000/tasks", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const tasks = await taskResponse.json();
+
+    console.log("Tasks for projects:", tasks);
+
+    if (!taskResponse.ok) {
+      console.error("Failed to load tasks:", tasks);
+      return;
+    }
+
+    // --------------------------------
+    // 3. Clear old project cards
+    // --------------------------------
+
     projectList.innerHTML = "";
 
-    // Reset Task project dropdown
+    // --------------------------------
+    // 4. Reset task dropdown
+    // --------------------------------
+
     taskProjectInput.innerHTML = `
-            <option value="">Select Project</option>
-        `;
+      <option value="">Select Project</option>
+    `;
 
-    // Reset Quick Add project dropdown
+    // --------------------------------
+    // 5. Reset Quick Add dropdown
+    // --------------------------------
+
     quickAddProject.innerHTML = `
-            <option value="">Select Project</option>
-        `;
+      <option value="">Select Project</option>
+    `;
 
-    // Add every project
-    data.forEach(function (project) {
-      console.log(
-        "Project ID:",
-        project.id,
-        "Name:",
-        project.name,
-        "Owner:",
-        project.owner_id,
-      );
+    // --------------------------------
+    // 6. Create each project
+    // --------------------------------
 
-      // -------------------------
-      // Project card
-      // -------------------------
+    projects.forEach(function (project) {
+      // ==========================================
+      // PROJECT CARD
+      // ==========================================
 
       const projectCard = document.createElement("div");
+
       projectCard.className = "project-card";
 
+      // ==========================================
+      // PROJECT TITLE
+      // ==========================================
+
       const projectTitle = document.createElement("h3");
+
       projectTitle.textContent = project.name;
 
+      // ==========================================
+      // PROJECT DESCRIPTION
+      // ==========================================
+
       const projectDescription = document.createElement("p");
+
       projectDescription.textContent = project.description || "No description";
 
+      // ==========================================
+      // ADD NEW TASK BUTTON
+      // ==========================================
+
+      const addTaskBtn = document.createElement("button");
+
+      addTaskBtn.className = "add-task-btn";
+
+      addTaskBtn.textContent = "+ Add a new task";
+
+      addTaskBtn.addEventListener("click", function () {
+        // Select this project in the task form
+        taskProjectInput.value = project.id;
+
+        // Move user to task form
+        taskForm.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        // Put cursor inside title field
+        taskTitleInput.focus();
+      });
+
+      // ==========================================
+      // TASK HEADING
+      // ==========================================
+
+      const tasksHeading = document.createElement("h4");
+
+      tasksHeading.textContent = "Tasks:";
+
+      // ==========================================
+      // TASK LIST
+      // ==========================================
+
+      const projectTaskList = document.createElement("div");
+
+      projectTaskList.className = "project-task-list";
+
+      // Find tasks belonging to this project
+      const projectTasks = tasks.filter(function (task) {
+        return task.project_id === project.id;
+      });
+
+      // ==========================================
+      // DISPLAY TASKS
+      // ==========================================
+
+      if (projectTasks.length === 0) {
+        const noTasks = document.createElement("p");
+
+        noTasks.textContent = "No tasks yet.";
+
+        noTasks.className = "no-project-tasks";
+
+        projectTaskList.appendChild(noTasks);
+      } else {
+        projectTasks.forEach(function (task) {
+          // Task row
+          const taskRow = document.createElement("div");
+
+          taskRow.className = "project-task";
+
+          // Checkbox
+          const checkbox = document.createElement("input");
+
+          checkbox.type = "checkbox";
+
+          checkbox.checked = task.status === "completed";
+
+          // Task title
+          const taskTitle = document.createElement("span");
+
+          taskTitle.textContent = task.title;
+
+          // Completed task styling
+          if (task.status === "completed") {
+            taskTitle.classList.add("completed-task");
+          }
+
+          // Add checkbox and title
+          taskRow.appendChild(checkbox);
+
+          taskRow.appendChild(taskTitle);
+
+          // ==========================================
+          // CHECKBOX -> MARK TASK COMPLETED
+          // ==========================================
+
+          checkbox.addEventListener("change", async function () {
+            const newStatus = checkbox.checked ? "completed" : "pending";
+
+            const updatedTask = {
+              title: task.title,
+
+              description: task.description,
+
+              status: newStatus,
+
+              priority: task.priority,
+
+              due_date: task.due_date,
+            };
+
+            try {
+              const response = await fetch(
+                `http://127.0.0.1:8000/tasks/${task.id}`,
+                {
+                  method: "PUT",
+
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+
+                  body: JSON.stringify(updatedTask),
+                },
+              );
+
+              const data = await response.json();
+
+              if (!response.ok) {
+                console.error("Failed to update task status:", data);
+
+                // Revert checkbox
+                checkbox.checked = !checkbox.checked;
+
+                return;
+              }
+
+              // Update visual state
+              if (newStatus === "completed") {
+                taskTitle.classList.add("completed-task");
+              } else {
+                taskTitle.classList.remove("completed-task");
+              }
+
+              console.log(`Task "${task.title}" marked as ${newStatus}`);
+
+              // Update statistics
+              await loadStatistics();
+
+              // Update task cache/list
+              await loadTasks();
+            } catch (error) {
+              console.error("Error updating task status:", error);
+
+              // Revert checkbox
+              checkbox.checked = !checkbox.checked;
+            }
+          });
+
+          projectTaskList.appendChild(taskRow);
+        });
+      }
+
+      // ==========================================
+      // PROJECT ACTION BUTTONS
+      // ==========================================
+
       const projectActions = document.createElement("div");
+
       projectActions.className = "card-actions";
 
+      // Edit
       const editProjectBtn = document.createElement("button");
+
       editProjectBtn.className = "edit-btn";
+
       editProjectBtn.textContent = "Edit";
 
+      // Delete
       const deleteProjectBtn = document.createElement("button");
+
       deleteProjectBtn.className = "delete-btn";
+
       deleteProjectBtn.textContent = "Delete";
 
       projectActions.appendChild(editProjectBtn);
+
       projectActions.appendChild(deleteProjectBtn);
 
+      // ==========================================
+      // PUT EVERYTHING INSIDE PROJECT CARD
+      // ==========================================
+
       projectCard.appendChild(projectTitle);
+
       projectCard.appendChild(projectDescription);
+
+      projectCard.appendChild(addTaskBtn);
+
+      projectCard.appendChild(tasksHeading);
+
+      projectCard.appendChild(projectTaskList);
+
       projectCard.appendChild(projectActions);
 
       projectList.appendChild(projectCard);
+
+      // ==========================================
+      // EDIT PROJECT
+      // ==========================================
 
       editProjectBtn.addEventListener("click", async function () {
         const newName = prompt("Enter new project name:", project.name);
@@ -468,17 +693,17 @@ async function loadProjects() {
           project.description || "",
         );
 
-        const token = localStorage.getItem("access_token");
-
         try {
           const response = await fetch(
             `http://127.0.0.1:8000/projects/${project.id}`,
             {
               method: "PUT",
+
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
+
               body: JSON.stringify({
                 name: newName.trim(),
                 description: newDescription,
@@ -487,8 +712,6 @@ async function loadProjects() {
           );
 
           const data = await response.json();
-
-          console.log("Update project response:", data);
 
           if (!response.ok) {
             console.error("Failed to update project:", data);
@@ -514,6 +737,10 @@ async function loadProjects() {
         }
       });
 
+      // ==========================================
+      // DELETE PROJECT
+      // ==========================================
+
       deleteProjectBtn.addEventListener("click", async function () {
         const confirmed = confirm(
           `Are you sure you want to delete "${project.name}"?`,
@@ -523,13 +750,12 @@ async function loadProjects() {
           return;
         }
 
-        const token = localStorage.getItem("access_token");
-
         try {
           const response = await fetch(
             `http://127.0.0.1:8000/projects/${project.id}`,
             {
               method: "DELETE",
+
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -559,31 +785,35 @@ async function loadProjects() {
           );
 
           await loadProjects();
+
           await loadTasks();
+
           await loadStatistics();
         } catch (error) {
           console.error("Error deleting project:", error);
         }
       });
 
-      // -------------------------
-      // Task project dropdown
-      // -------------------------
+      // ==========================================
+      // TASK FORM PROJECT DROPDOWN
+      // ==========================================
 
       const projectOption = document.createElement("option");
 
       projectOption.value = project.id;
+
       projectOption.textContent = project.name;
 
       taskProjectInput.appendChild(projectOption);
 
-      // -------------------------
-      // Quick Add project dropdown
-      // -------------------------
+      // ==========================================
+      // QUICK ADD PROJECT DROPDOWN
+      // ==========================================
 
       const quickAddOption = document.createElement("option");
 
       quickAddOption.value = project.id;
+
       quickAddOption.textContent = project.name;
 
       quickAddProject.appendChild(quickAddOption);
