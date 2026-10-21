@@ -49,7 +49,7 @@ quickAddForm.addEventListener("submit", async function (event) {
   const token = localStorage.getItem("access_token");
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/tasks/quick-add", {
+    const response = await fetch("https://taskflow-3485.onrender.com/tasks/quick-add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +93,7 @@ searchBtn.addEventListener("click", async function () {
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/tasks/search?title=${encodeURIComponent(title)}&algo=linear`,
+      `https://taskflow-3485.onrender.com/tasks/search?title=${encodeURIComponent(title)}&algo=linear`,
       {
         method: "GET",
         headers: {
@@ -152,7 +152,7 @@ taskForm.addEventListener("submit", async function (event) {
   const token = localStorage.getItem("access_token");
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/tasks", {
+    const response = await fetch("https://taskflow-3485.onrender.com/tasks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -283,7 +283,7 @@ function renderTasks(data) {
       );
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/tasks/${task.id}`, {
+        const response = await fetch(`https://taskflow-3485.onrender.com/tasks/${task.id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -339,7 +339,7 @@ function renderTasks(data) {
       };
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/tasks/${task.id}`, {
+        const response = await fetch(`https://taskflow-3485.onrender.com/tasks/${task.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -389,7 +389,7 @@ async function loadProjects() {
     // 1. Get projects
     // --------------------------------
 
-    const projectResponse = await fetch("http://127.0.0.1:8000/projects", {
+    const projectResponse = await fetch("https://taskflow-3485.onrender.com/projects", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -409,7 +409,7 @@ async function loadProjects() {
     // 2. Get all tasks
     // --------------------------------
 
-    const taskResponse = await fetch("http://127.0.0.1:8000/tasks", {
+    const taskResponse = await fetch("https://taskflow-3485.onrender.com/tasks", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -583,7 +583,7 @@ async function loadProjects() {
 
             try {
               const response = await fetch(
-                `http://127.0.0.1:8000/tasks/${task.id}`,
+                `https://taskflow-3485.onrender.com/tasks/${task.id}`,
                 {
                   method: "PUT",
 
@@ -695,7 +695,7 @@ async function loadProjects() {
 
         try {
           const response = await fetch(
-            `http://127.0.0.1:8000/projects/${project.id}`,
+            `https://taskflow-3485.onrender.com/projects/${project.id}`,
             {
               method: "PUT",
 
@@ -752,7 +752,7 @@ async function loadProjects() {
 
         try {
           const response = await fetch(
-            `http://127.0.0.1:8000/projects/${project.id}`,
+            `https://taskflow-3485.onrender.com/projects/${project.id}`,
             {
               method: "DELETE",
 
@@ -853,7 +853,7 @@ async function loadTasks() {
   // --------------------------------
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/tasks", {
+    const response = await fetch("https://taskflow-3485.onrender.com/tasks", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -893,7 +893,7 @@ async function loadStatistics() {
   const token = localStorage.getItem("access_token");
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/projects/statistics", {
+    const response = await fetch("https://taskflow-3485.onrender.com/projects/statistics", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -966,7 +966,7 @@ projectForm.addEventListener("submit", async function (event) {
   };
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/projects", {
+    const response = await fetch("https://taskflow-3485.onrender.com/projects", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1014,7 +1014,7 @@ loginForm.addEventListener("submit", async function (event) {
   formData.append("password", password);
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/login", {
+    const response = await fetch("https://taskflow-3485.onrender.com/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
